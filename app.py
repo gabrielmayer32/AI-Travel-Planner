@@ -245,14 +245,6 @@ if st.sidebar.button('Generate Travel Plan'):
                 mongo_uri = f"mongodb+srv://{db_username}:{db_password}@{db_host}/{db_name}?retryWrites=true&w=majority"
                 mongo_client  = init_connection()
 
-
-
-                # Example: Access a collection and perform an operation
-                db = mongo_client[db_name]
-                collection = db["your_collection_name"]  # Replace with your collection name
-                document = collection.find_one()  # Example operation
-                st.write(document)  # Display the document
-
             else:
                 st.error("MongoDB credentials not found. Please set db_username, db_password, db_host, and db_name in the Streamlit secrets.")
 
