@@ -238,10 +238,9 @@ if st.sidebar.button('Generate Travel Plan'):
                 db_username = st.secrets["db_username"]
                 db_password = st.secrets["db_password"]
                 db_host = st.secrets["db_host"]
-                db_name = st.secrets["db_name"]
 
                 # Create the MongoDB URI
-                mongo_uri = f"mongodb+srv://{db_username}:{db_password}@{db_host}/{db_name}?retryWrites=true&w=majority"
+                mongo_uri = f"mongodb+srv://{db_username}:{db_password}@{db_host}/?retryWrites=true&w=majority"
                 mongo_client  = init_connection()
 
             else:
