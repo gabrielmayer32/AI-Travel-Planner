@@ -7,6 +7,7 @@ import numpy as np
 import requests
 from openai import OpenAI
 import json
+import pymongo
 
 # Load environment variables
 load_dotenv()
@@ -232,7 +233,13 @@ if st.sidebar.button('Generate Travel Plan'):
 
                 # Create the MongoDB URI
                 mongo_uri = f"mongodb+srv://{db_username}:{db_password}@{db_host}/{db_name}?retryWrites=true&w=majority"
-                mongo_client = MongoClient(mongo_uri)
+                mongo_client = pymongo.MongoClient(
+        host=st.secrets["mongo"]["host"],
+        port=st.secrets["mongo"]["port"],
+        username=st.secrets["mongo"]["username"],
+        password=st.secrets["mongo"]["password"]
+    )
+
 
                 # Example: Access a collection and perform an operation
                 db = mongo_client[db_name]
