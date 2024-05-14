@@ -25,12 +25,12 @@ st.sidebar.header('Enter details to generate a travel plan:')
 source = st.sidebar.text_input('Where you come from?', 'New York')
 date_input = st.sidebar.date_input('Travel Start Date', min_value=date.today())
 date = date_input.strftime('%Y-%m-%d')
-budget = st.sidebar.number_input('Budget', min_value=100, value=1000, step=100)
-duration = st.sidebar.slider('Duration (days)', 1, 90, 7)
+# budget = st.sidebar.number_input('Budget', min_value=100, value=1000, step=100)
+duration = st.sidebar.slider('Duration (days)', 1, 15, 7)
 
 # Currency selector
-currencies = ['USD', 'EUR', 'GBP', 'JPY', 'AUD']  # Add more currencies as needed
-selected_currency = st.sidebar.selectbox('Select Currency', currencies)
+# currencies = ['USD', 'EUR', 'GBP', 'JPY', 'AUD']  
+# selected_currency = st.sidebar.selectbox('Select Currency', currencies)
 
 # Additional user preferences
 st.sidebar.subheader('Your Preferences:')
@@ -47,9 +47,9 @@ interests = st.sidebar.multiselect('Select Your Interests', predefined_interests
 dietary_restrictions = st.sidebar.text_input('Dietary Restrictions', 'None')
 activity_level = st.sidebar.selectbox('Activity Level', ['Low', 'Moderate', 'High'])
 specific_interests = st.sidebar.text_input('Specific Interests', 'art museums, hiking trails')
-accommodation_preference = st.sidebar.selectbox('Accommodation Preference', ['Hotel', 'Hostel', 'Apartment', 'No Preference'])
+accommodation_preference = st.sidebar.selectbox('Accommodation Preference', ['Hotel', 'Lodge', 'Airbnb', 'Low budget'])
 travel_style = st.sidebar.selectbox('Travel Style', ['Relaxed', 'Fast-Paced', 'Adventurous', 'Cultural', 'Family-Friendly'])
-must_visit_landmarks = st.sidebar.text_input('Must-Visit Landmarks', 'e.g., Eiffel Tower, Grand Canyon')
+# must_visit_landmarks = st.sidebar.text_input('Must-Visit Landmarks', 'e.g., Eiffel Tower, Grand Canyon')
 
 # Connect to MongoDB and fetch data
 def fetch_data(collection_name):
@@ -72,7 +72,8 @@ def cosine_similarity(a, b):
 
 # Find similar activities based on user preferences
 def find_similar_activities(user_preferences, activities, top_n=10):
-    query_description = f"{user_preferences['interests']}, {user_preferences['specific_interests']}"
+    # query_description = f"{user_preferences['interests']}, {user_preferences['specific_interests']}"
+    query_description = f"{user_preferences['interests']}"
     query_embedding = get_embedding(query_description)
 
     embeddings = [activity['embedding'] for activity in activities if 'embedding' in activity]
@@ -130,7 +131,7 @@ def calculate_optimal_route(activities, distances):
     return route
 
 # Function to create a detailed message for the AI
-def get_personalized_travel_plan(user_preferences, trip_details, selected_currency, similar_activities, hotels, restaurants, regions, distances, route):
+def get_personalized_travel_plan(user_preferences, trip_details,similar_activities, hotels, restaurants, regions, distances, route):
     hotels_list = ', '.join([hotel['Name'] for hotel in hotels])
     restaurants_list = ', '.join([restaurant['Name'] for restaurant in restaurants])
 
@@ -140,18 +141,31 @@ def get_personalized_travel_plan(user_preferences, trip_details, selected_curren
         similar_activities_details = "Similar activities based on your interests include: "
         similar_activities_details += ", ".join([f"{activity['Name']} - {activity['Description']}" for activity in similar_activities])
     
+    # prompt = (
+    #     f"Create a detailed travel itinerary in {user_preferences['language_preference']} focused on attractions, restaurants, and activities which encourage eco-tourism for a trip from "
+    #     f"{trip_details['source']} to {trip_details['destination']}, starting on {trip_details['date']}, lasting for "
+    #     f"{trip_details['duration']} days, within a budget of {selected_currency} {trip_details['budget']}. This should include daily timings, "
+    #     f"preferences for {user_preferences['accommodation_preference']} accommodations, a {user_preferences['travel_style']} travel style, "
+    #     f"and interests in {user_preferences['interests']}. Dietary restrictions include "
+    #     f"{user_preferences['dietary_restrictions']}, and the activity level is {user_preferences['activity_level']}. "
+    #     f"Include these verified eco-friendly hotels: {hotels_list}, and restaurants: {restaurants_list}. If you don't know what restaurant to put, suggest a local one. "
+    #     f"The route must be optimized and travel time between destinations should not exceed 1 hour and 30 minutes. "
+    #     f"Must-visit landmarks include {user_preferences['must_visit_landmarks']}. Also, provide a travel checklist relevant to the destination and duration. "
+    #     f"The optimal route based on regions is: {route}. {similar_activities_details}"
+    # )
+
     prompt = (
-        f"Create a detailed travel itinerary in {user_preferences['language_preference']} focused on attractions, restaurants, and activities which encourage eco-tourism for a trip from "
-        f"{trip_details['source']} to {trip_details['destination']}, starting on {trip_details['date']}, lasting for "
-        f"{trip_details['duration']} days, within a budget of {selected_currency} {trip_details['budget']}. This should include daily timings, "
-        f"preferences for {user_preferences['accommodation_preference']} accommodations, a {user_preferences['travel_style']} travel style, "
-        f"and interests in {user_preferences['interests']}. Dietary restrictions include "
-        f"{user_preferences['dietary_restrictions']}, and the activity level is {user_preferences['activity_level']}. "
-        f"Include these verified eco-friendly hotels: {hotels_list}, and restaurants: {restaurants_list}. If you don't know what restaurant to put, suggest a local one. "
-        f"The route must be optimized and travel time between destinations should not exceed 1 hour and 30 minutes. "
-        f"Must-visit landmarks include {user_preferences['must_visit_landmarks']}. Also, provide a travel checklist relevant to the destination and duration. "
-        f"The optimal route based on regions is: {route}. {similar_activities_details}"
-    )
+    f"Create a detailed travel itinerary in {user_preferences['language_preference']} focused on attractions, restaurants, and activities which encourage eco-tourism for a trip from "
+    f"{trip_details['source']} to {trip_details['destination']}, starting on {trip_details['date']}, lasting for "
+    f"{trip_details['duration']} days. This should include daily timings, "
+    f"preferences for {user_preferences['accommodation_preference']} accommodations, a {user_preferences['travel_style']} travel style, "
+    f"and interests in {user_preferences['interests']}. Dietary restrictions include "
+    f"{user_preferences['dietary_restrictions']}, and the activity level is {user_preferences['activity_level']}. "
+    f"Include these verified eco-friendly hotels: {hotels_list}, and restaurants: {restaurants_list}. If you don't know what restaurant to put, suggest a local one. "
+    f"The route must be optimized and travel time between destinations should not exceed 1 hour and 30 minutes. "
+    f" Also, provide a travel checklist relevant to the destination and duration. "
+    f"The optimal route based on regions is: {route}. {similar_activities_details}"
+)
 
     payload = {
         "model": "gpt-3.5-turbo",
@@ -179,21 +193,22 @@ user_preferences = {
     'interests': interests,
     'dietary_restrictions': dietary_restrictions,
     'activity_level': activity_level,
-    'specific_interests': specific_interests,
+    # 'specific_interests': specific_interests,
     'accommodation_preference': accommodation_preference,
     'travel_style': travel_style,
-    'must_visit_landmarks': must_visit_landmarks
+    # 'must_visit_landmarks': must_visit_landmarks
 }
 trip_details = {
     'source': source,
     'destination': 'Mauritius',
     'date': date,
-    'budget': budget,
+    # 'budget': budget,
     'duration': duration
 }
 
 if st.sidebar.button('Generate Travel Plan'):
-    if source and date and budget and duration:
+    # if source and date and budget and duration:
+    if source and date and duration:
         # Fetch data from MongoDB
         activities = fetch_data('activities')
         hotels = fetch_data('hotels')
@@ -222,15 +237,16 @@ if st.sidebar.button('Generate Travel Plan'):
             st.error('No similar activities found.')
             st.stop()
 
-        # Display similar activities
-        for i, activity in enumerate(similar_activities, start=1):
-            st.write(f"Activity {i}: {activity['Name']} - {activity['Description']}")
+        # # Display similar activities
+        # for i, activity in enumerate(similar_activities, start=1):
+        #     st.write(f"Activity {i}: {activity['Name']} - {activity['Description']}")
 
         # Calculate optimal route
         route = calculate_optimal_route(similar_activities, distances)
 
         with st.spinner('Generating Travel Plan...'):
-            response = get_personalized_travel_plan(user_preferences, trip_details, selected_currency, similar_activities, hotels, restaurants, regions, distances, route)
+            # response = get_personalized_travel_plan(user_preferences, trip_details, selected_currency, similar_activities, hotels, restaurants, regions, distances, route)
+            response = get_personalized_travel_plan(user_preferences, trip_details, similar_activities, hotels, restaurants, regions, distances, route)
         st.success('Here is your personalized travel plan in ' + language_preference + ':')
         st.markdown(response)
     else:
