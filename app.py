@@ -55,6 +55,8 @@ travel_style = st.sidebar.selectbox('Travel Style', ['Relaxed', 'Fast-Paced', 'A
 
 # Connect to MongoDB and fetch data
 def fetch_data(collection_name):
+    if ENV == 'development':
+        load_dotenv()
     mongo_uri = os.getenv('MONGO_URI')
     mongo_client = MongoClient(mongo_uri)
     db = mongo_client['eco-activities-mu']
@@ -220,7 +222,12 @@ if st.sidebar.button('Generate Travel Plan'):
         distances = distance_matrix_data[0]['matrix']  # Ensure correct access to distance matrix
 
         # Generate and store embeddings for activities if they don't already have them
-        mongo_uri = os.getenv('MONGO_URI')
+        mongo_uri = st.secrets('MONGO_URI')
+        if mongo_uri is None:
+            st.error("mongo_uri API key not found. Please set the OPENAI_API_KEY in the secrets.")
+        else:
+            ongo_uri = os.getenv('MONGO_URI')
+
         mongo_client = MongoClient(mongo_uri)
         activity_collection = mongo_client['eco-activities-mu']['activities']
 
