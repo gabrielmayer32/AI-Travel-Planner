@@ -11,11 +11,14 @@ import json
 # Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-if not client.api_key:
-    raise ValueError("The OPENAI_API_KEY environment variable is not set. Please check your .env file.")
+ENV = os.getenv('ENV')
 
+if (ENV == 'development'):
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    if not client.api_key:
+        raise ValueError("The OPENAI_API_KEY environment variable is not set. Please check your .env file.")
+else:
+    client = OpenAI(st.secrets['OPENAI_API_KEY'])
 # Initialize the application's title and subtitle
 st.title('Eco Travel Planner for Your Stay in Mauritius')
 st.subheader('Plan your next trip with us')
