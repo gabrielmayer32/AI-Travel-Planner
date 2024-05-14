@@ -3,9 +3,13 @@ import os
 import sys
 from streamlit.web import cli as stcli
 
+# wrapper.py
+import subprocess
+
 def app():
-    sys.argv = ["streamlit", "run", "app.py"]
-    sys.exit(stcli.main())
+    cmd = ["streamlit", "run", "app.py"]
+    process = subprocess.Popen(cmd)
+    process.communicate()
 
 if __name__ == "__main__":
     app()
