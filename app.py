@@ -234,19 +234,14 @@ if st.sidebar.button('Generate Travel Plan'):
         if mongo_uri is None:
             st.error("mongo_uri API key not found. Please set the OPENAI_API_KEY in the secrets.")
         else:
-            if all(k in st.secrets for k in ("db_username", "db_password", "db_host", "db_name")):
-                db_username = st.secrets["db_username"]
-                db_password = st.secrets["db_password"]
-                db_host = st.secrets["db_host"]
-
-                # Create the MongoDB URI
-                mongo_uri = f"mongodb+srv://{db_username}:{db_password}@{db_host}/?retryWrites=true&w=majority"
+            if all(k in st.secrets for k in ("db_username", "db_password", "db_host")):
+                
                 mongo_client  = init_connection()
 
             else:
                 st.error("MongoDB credentials not found. Please set db_username, db_password, db_host, and db_name in the Streamlit secrets.")
 
-        mongo_client = MongoClient(mongo_uri)
+        # mongo_client = MongoClient(mongo_uri)
         activity_collection = mongo_client['eco-activities-mu']['activities']
 
         for activity in activities:
