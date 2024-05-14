@@ -220,12 +220,28 @@ if st.sidebar.button('Generate Travel Plan'):
         distance_matrix_data = fetch_data('distance_matrix')
         distances = distance_matrix_data[0]['matrix']  # Ensure correct access to distance matrix
 
-        # Generate and store embeddings for activities if they don't already have them
-        mongo_uri = st.secrets('MONGO_URI')
+        mongo_uri = os.getenv('MONGO_URI')
         if mongo_uri is None:
             st.error("mongo_uri API key not found. Please set the OPENAI_API_KEY in the secrets.")
         else:
-            ongo_uri = os.getenv('MONGO_URI')
+            if all(k in st.secrets for k in ("db_username", "db_password", "db_host", "db_name")):
+                db_username = st.secrets["db_username"]
+                db_password = st.secrets["db_password"]
+                db_host = st.secrets["db_host"]
+                db_name = st.secrets["db_name"]
+
+                # Create the MongoDB URI
+                mongo_uri = f"mongodb+srv://{db_username}:{db_password}@{db_host}/{db_name}?retryWrites=true&w=majority"
+                mongo_client = MongoClient(mongo_uri)
+
+                # Example: Access a collection and perform an operation
+                db = mongo_client[db_name]
+                collection = db["your_collection_name"]  # Replace with your collection name
+                document = collection.find_one()  # Example operation
+                st.write(document)  # Display the document
+
+            else:
+                st.error("MongoDB credentials not found. Please set db_username, db_password, db_host, and db_name in the Streamlit secrets.")
 
         mongo_client = MongoClient(mongo_uri)
         activity_collection = mongo_client['eco-activities-mu']['activities']
