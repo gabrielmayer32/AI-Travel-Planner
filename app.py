@@ -214,7 +214,6 @@ trip_details = {
 def init_connection():
     return pymongo.MongoClient(
         host=st.secrets["mongo"]["host"],
-        port=st.secrets["mongo"]["port"],
         username=st.secrets["mongo"]["username"],
         password=st.secrets["mongo"]["password"]
     )
