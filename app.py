@@ -55,8 +55,7 @@ travel_style = st.sidebar.selectbox('Travel Style', ['Relaxed', 'Fast-Paced', 'A
 
 # Connect to MongoDB and fetch data
 def fetch_data(collection_name):
-    if ENV == 'development':
-        load_dotenv()
+    
     mongo_uri = os.getenv('MONGO_URI')
     mongo_client = MongoClient(mongo_uri)
     db = mongo_client['eco-activities-mu']
