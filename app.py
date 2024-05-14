@@ -213,9 +213,9 @@ trip_details = {
 @st.cache_resource
 def init_connection():
     return pymongo.MongoClient(
-        host=st.secrets["mongo"]["host"],
-        username=st.secrets["mongo"]["username"],
-        password=st.secrets["mongo"]["password"]
+        host=st.secrets["db_host"],
+        username=st.secrets["db_username"],
+        password=st.secrets["db_password"]
     )
 
 
