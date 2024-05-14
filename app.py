@@ -210,6 +210,16 @@ trip_details = {
     'duration': duration
 }
 
+@st.cache_resource
+def init_connection():
+    return pymongo.MongoClient(
+        host=st.secrets["mongo"]["host"],
+        port=st.secrets["mongo"]["port"],
+        username=st.secrets["mongo"]["username"],
+        password=st.secrets["mongo"]["password"]
+    )
+
+
 if st.sidebar.button('Generate Travel Plan'):
     # if source and date and budget and duration:
     if source and date and duration:
@@ -233,12 +243,8 @@ if st.sidebar.button('Generate Travel Plan'):
 
                 # Create the MongoDB URI
                 mongo_uri = f"mongodb+srv://{db_username}:{db_password}@{db_host}/{db_name}?retryWrites=true&w=majority"
-                mongo_client = pymongo.MongoClient(
-        host=st.secrets["mongo"]["host"],
-        port=st.secrets["mongo"]["port"],
-        username=st.secrets["mongo"]["username"],
-        password=st.secrets["mongo"]["password"]
-    )
+                mongo_client  = init_connection()
+
 
 
                 # Example: Access a collection and perform an operation
