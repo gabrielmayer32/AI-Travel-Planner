@@ -253,11 +253,3 @@ if st.sidebar.button('Generate Travel Plan'):
         st.error('Please fill in all the fields to generate the travel plan.')
 
 
-# app.py
-import streamlit.web.bootstrap
-from streamlit.web import cli as stcli
-import sys
-
-def app():
-    sys.argv = ["streamlit", "run", "your_streamlit_app.py"]
-    sys.exit(stcli.main())
