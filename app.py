@@ -7,7 +7,6 @@ import numpy as np
 import requests
 from openai import OpenAI
 import json
-import pymongo
 
 # Load environment variables
 load_dotenv()
@@ -56,7 +55,8 @@ travel_style = st.sidebar.selectbox('Travel Style', ['Relaxed', 'Fast-Paced', 'A
 
 # Connect to MongoDB and fetch data
 def fetch_data(collection_name):
-    
+    if ENV == 'development':
+        load_dotenv()
     mongo_uri = os.getenv('MONGO_URI')
     mongo_client = MongoClient(mongo_uri)
     db = mongo_client['eco-activities-mu']
@@ -210,15 +210,6 @@ trip_details = {
     'duration': duration
 }
 
-@st.cache_resource
-def init_connection():
-    return pymongo.MongoClient(
-        host=st.secrets["db_host"],
-        username=st.secrets["db_username"],
-        password=st.secrets["db_password"]
-    )
-
-
 if st.sidebar.button('Generate Travel Plan'):
     # if source and date and budget and duration:
     if source and date and duration:
@@ -230,18 +221,14 @@ if st.sidebar.button('Generate Travel Plan'):
         distance_matrix_data = fetch_data('distance_matrix')
         distances = distance_matrix_data[0]['matrix']  # Ensure correct access to distance matrix
 
+        # Generate and store embeddings for activities if they don't already have them
         mongo_uri = os.getenv('MONGO_URI')
-        if mongo_uri is None:
-            st.error("mongo_uri API key not found. Please set the OPENAI_API_KEY in the secrets.")
+        if api_key is None:
+            st.error("OpenAI API key not found. Please set the OPENAI_API_KEY in the secrets.")
         else:
-            if all(k in st.secrets for k in ("db_username", "db_password", "db_host")):
-                
-                mongo_client  = init_connection()
+            client = OpenAI(api_key=api_key)
 
-            else:
-                st.error("MongoDB credentials not found. Please set db_username, db_password, db_host, and db_name in the Streamlit secrets.")
-
-        # mongo_client = MongoClient(mongo_uri)
+        mongo_client = MongoClient(mongo_uri)
         activity_collection = mongo_client['eco-activities-mu']['activities']
 
         for activity in activities:
