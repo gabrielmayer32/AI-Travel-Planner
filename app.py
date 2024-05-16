@@ -59,6 +59,40 @@ travel_style = st.sidebar.selectbox('Travel Style', ['Relaxed', 'Fast-Paced', 'A
 
 # Connect to MongoDB and fetch data
 
+def add_conclusion():
+    st.header("Be Aware of Local Rules and Guidelines")
+    st.write("""
+    It's important to familiarize yourself with local rules and regulations to avoid endangering local wildlife, marine life, or the environment.
+    """)
+
+    st.subheader("Dolphin and Whale Watching")
+    st.write("""
+    If dolphin and whale watching is on your wishlist, there are specific rules to follow to ensure the safety of both you and the marine life. According to the Tourism Authority (Dolphin and Whale Watching) Regulations 2012:
+    
+    - **Swimming Prohibition:** It is prohibited to swim, dive, or snorkel with whales in Mauritius.
+    - **No Feeding:** You cannot feed a dolphin or whale, or throw food or any other object, substance, or matter near or around a dolphin or whale.
+    - **Licensed Providers:** You must travel with a licensed whale and dolphin-watching provider.
+    - **Approach Guidelines:** Pleasure crafts can only approach whales and dolphins from the side, must follow a parallel course, and operate at a no-wake speed.
+    - **No Touching:** You cannot touch, or attempt to touch, a dolphin or whale.
+    - **Noise Prohibition:** You cannot make noise to attract their attention or circle around them.
+    - **Swimming Briefing:** If swimming with dolphins, you must be briefed on sound techniques related to calm and silent swimming. No more than three swimmers (including a designated lifesaver) can enter, dive, or snorkel simultaneously in the sea.
+    
+    For full details, refer to the Tourism Authority (Dolphin and Whale Watching) Regulations 2012.
+    """)
+
+    st.subheader("Be Aware of the Marine Environment")
+    st.write("""
+    Our marine environment is very delicate. Here are some tips to help preserve it for future generations:
+
+    - **Do Not Touch:** Do not touch marine organisms. Touching coral will kill it, and other organisms can be venomous.
+    - **Avoid Walking on Corals:** One footstep can break coral that has taken over 10 to 50 years to grow only a few centimeters.
+    - **Leave Marine Organisms:** Do not take any marine organisms with you, such as shells and corals. All organisms have a role to play in the ecosystem.
+    - **Anchor with Care:** Do not drop anchors on live coral or seagrass habitats. Anchors can destroy decades of coral growth in seconds.
+    - **Do Not Feed Fish:** Many fish feed on algae or detritus, keeping the reef clean. Feeding them can disrupt this balance.
+    - **Proper Disposal of Waste:** Do not leave rubbish behind. Beach litter usually ends up in the ocean, harming marine habitats and organisms.
+    - **Snorkel Safely:** Avoid snorkeling alone if possible. It is safer to snorkel with a buddy. Inform someone (such as boathouse staff) where you are going.
+    """)
+
 def fetch_data(collection_name):
     load_dotenv()
     mongo_uri = os.getenv('MONGO_URI')
@@ -99,38 +133,30 @@ def find_similar_activities(user_preferences, activities, top_n=10):
     return [activities[i] for i in top_indices]
 
 # Calculate optimal route
-def calculate_optimal_route(activities, hotels, distances):
-    # Combine region IDs from both activities and hotels
-    location_regions = []
+def calculate_optimal_route(activities, distances):
+    activity_regions = []
     for activity in activities:
         try:
             region_id = int(activity['Region ID'])
-            location_regions.append(region_id)
+            activity_regions.append(region_id)
         except (ValueError, TypeError):
             continue  # Skip activities with invalid or missing Region ID
 
-    for hotel in hotels:
-        try:
-            region_id = int(hotel['Region ID'])
-            location_regions.append(region_id)
-        except (ValueError, TypeError):
-            continue  # Skip hotels with invalid or missing Region ID
-
-    if not location_regions:
-        raise ValueError("No valid Region ID found in activities or hotels")
+    if not activity_regions:
+        raise ValueError("No valid Region ID found in activities")
 
     route = []
     visited = set()
 
-    current_region = location_regions[0]
+    current_region = activity_regions[0]
     route.append(current_region)
     visited.add(current_region)
 
-    while len(visited) < len(location_regions):
+    while len(visited) < len(activity_regions):
         next_region = None
         min_distance = float('inf')
         
-        for region in location_regions:
+        for region in activity_regions:
             if region not in visited and distances[current_region - 1][region - 1] < min_distance:
                 next_region = region
                 min_distance = distances[current_region - 1][region - 1]
@@ -176,39 +202,7 @@ def find_accommodations(user_preferences, accommodations, top_n=3):
 
 
 
-def add_conclusion():
-    st.header("Be Aware of Local Rules and Guidelines")
-    st.write("""
-    It's important to familiarize yourself with local rules and regulations to avoid endangering local wildlife, marine life, or the environment.
-    """)
 
-    st.subheader("Dolphin and Whale Watching")
-    st.write("""
-    If dolphin and whale watching is on your wishlist, there are specific rules to follow to ensure the safety of both you and the marine life. According to the Tourism Authority (Dolphin and Whale Watching) Regulations 2012:
-    
-    - **Swimming Prohibition:** It is prohibited to swim, dive, or snorkel with whales in Mauritius.
-    - **No Feeding:** You cannot feed a dolphin or whale, or throw food or any other object, substance, or matter near or around a dolphin or whale.
-    - **Licensed Providers:** You must travel with a licensed whale and dolphin-watching provider.
-    - **Approach Guidelines:** Pleasure crafts can only approach whales and dolphins from the side, must follow a parallel course, and operate at a no-wake speed.
-    - **No Touching:** You cannot touch, or attempt to touch, a dolphin or whale.
-    - **Noise Prohibition:** You cannot make noise to attract their attention or circle around them.
-    - **Swimming Briefing:** If swimming with dolphins, you must be briefed on sound techniques related to calm and silent swimming. No more than three swimmers (including a designated lifesaver) can enter, dive, or snorkel simultaneously in the sea.
-    
-    For full details, refer to the Tourism Authority (Dolphin and Whale Watching) Regulations 2012.
-    """)
-
-    st.subheader("Be Aware of the Marine Environment")
-    st.write("""
-    Our marine environment is very delicate. Here are some tips to help preserve it for future generations:
-
-    - **Do Not Touch:** Do not touch marine organisms. Touching coral will kill it, and other organisms can be venomous.
-    - **Avoid Walking on Corals:** One footstep can break coral that has taken over 10 to 50 years to grow only a few centimeters.
-    - **Leave Marine Organisms:** Do not take any marine organisms with you, such as shells and corals. All organisms have a role to play in the ecosystem.
-    - **Anchor with Care:** Do not drop anchors on live coral or seagrass habitats. Anchors can destroy decades of coral growth in seconds.
-    - **Do Not Feed Fish:** Many fish feed on algae or detritus, keeping the reef clean. Feeding them can disrupt this balance.
-    - **Proper Disposal of Waste:** Do not leave rubbish behind. Beach litter usually ends up in the ocean, harming marine habitats and organisms.
-    - **Snorkel Safely:** Avoid snorkeling alone if possible. It is safer to snorkel with a buddy. Inform someone (such as boathouse staff) where you are going.
-    """)
 
 # Function to create a detailed message for the AI
 def get_personalized_travel_plan(user_preferences, trip_details,similar_activities, hotels, restaurants, regions, distances, route):
@@ -324,7 +318,7 @@ if st.sidebar.button('Generate Travel Plan'):
             st.stop()
 
         # Calculate optimal route including both activities and hotels
-        route = calculate_optimal_route(similar_activities, similar_hotels, distances)
+        route = calculate_optimal_route(similar_activities, distances)
 
         with st.spinner('Generating Travel Plan...'):
             response = get_personalized_travel_plan(user_preferences, trip_details, similar_activities, similar_hotels, restaurants, regions, distances, route)
