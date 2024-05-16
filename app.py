@@ -18,6 +18,10 @@ if api_key is None:
 else:
     client = OpenAI(api_key=api_key)
 
+
+
+
+
 # Initialize the application's title and subtitle
 st.title('Eco Travel Planner for Your Stay in Mauritius')
 st.subheader('Plan your next trip with us')
@@ -49,7 +53,7 @@ interests = st.sidebar.multiselect('Select Your Interests', predefined_interests
 dietary_restrictions = st.sidebar.text_input('Dietary Restrictions', 'None')
 activity_level = st.sidebar.selectbox('Activity Level', ['Low', 'Moderate', 'High'])
 specific_interests = st.sidebar.text_input('Specific Interests', 'art museums, hiking trails')
-accommodation_preference = st.sidebar.selectbox('Accommodation Preference', ['Hotel', 'Lodge', 'Airbnb', 'Low budget'])
+accommodation_preference = st.sidebar.selectbox('Eco-Accommodation Preference', ['Hotel', 'Lodge' ])
 travel_style = st.sidebar.selectbox('Travel Style', ['Relaxed', 'Fast-Paced', 'Adventurous', 'Cultural', 'Family-Friendly'])
 # must_visit_landmarks = st.sidebar.text_input('Must-Visit Landmarks', 'e.g., Eiffel Tower, Grand Canyon')
 
@@ -95,30 +99,38 @@ def find_similar_activities(user_preferences, activities, top_n=10):
     return [activities[i] for i in top_indices]
 
 # Calculate optimal route
-def calculate_optimal_route(activities, distances):
-    activity_regions = []
+def calculate_optimal_route(activities, hotels, distances):
+    # Combine region IDs from both activities and hotels
+    location_regions = []
     for activity in activities:
         try:
             region_id = int(activity['Region ID'])
-            activity_regions.append(region_id)
+            location_regions.append(region_id)
         except (ValueError, TypeError):
             continue  # Skip activities with invalid or missing Region ID
 
-    if not activity_regions:
-        raise ValueError("No valid Region ID found in activities")
+    for hotel in hotels:
+        try:
+            region_id = int(hotel['Region ID'])
+            location_regions.append(region_id)
+        except (ValueError, TypeError):
+            continue  # Skip hotels with invalid or missing Region ID
+
+    if not location_regions:
+        raise ValueError("No valid Region ID found in activities or hotels")
 
     route = []
     visited = set()
 
-    current_region = activity_regions[0]
+    current_region = location_regions[0]
     route.append(current_region)
     visited.add(current_region)
 
-    while len(visited) < len(activity_regions):
+    while len(visited) < len(location_regions):
         next_region = None
         min_distance = float('inf')
         
-        for region in activity_regions:
+        for region in location_regions:
             if region not in visited and distances[current_region - 1][region - 1] < min_distance:
                 next_region = region
                 min_distance = distances[current_region - 1][region - 1]
@@ -133,6 +145,36 @@ def calculate_optimal_route(activities, distances):
             break
 
     return route
+
+
+def find_accommodations(user_preferences, accommodations, top_n=3):
+    # Filter accommodations based on user preferences
+    query_description = " ".join(user_preferences['interests'])
+    query_embedding = get_embedding(query_description)
+    print(user_preferences['accommodation_preference'])
+    
+    filtered_accommodations = [
+        acc for acc in accommodations
+        if any(tag in user_preferences['accommodation_preference'] for tag in acc['Tags'])
+    ]
+    
+    if not filtered_accommodations:
+        st.error("No accommodations found matching the criteria")
+        return []
+
+    # Calculate similarities using embeddings if available
+    if 'embedding' in filtered_accommodations[0]:
+        accommodations_embeddings = [acc['embedding'] for acc in filtered_accommodations]
+        similarities = [cosine_similarity(query_embedding, embedding) for embedding in accommodations_embeddings]
+        top_indices = np.argsort(similarities)[-top_n:][::-1]
+        return [filtered_accommodations[i] for i in top_indices]
+    else:
+        # Sort based on other criteria like ratings if embeddings are not available
+        sorted_accommodations = sorted(filtered_accommodations, key=lambda x: x.get('rating', 0), reverse=True)
+        return sorted_accommodations[:top_n]
+
+
+
 
 def add_conclusion():
     st.header("Be Aware of Local Rules and Guidelines")
@@ -179,31 +221,31 @@ def get_personalized_travel_plan(user_preferences, trip_details,similar_activiti
         similar_activities_details = "Similar activities based on your interests include: "
         similar_activities_details += ", ".join([f"{activity['Name']} - {activity['Description']}" for activity in similar_activities])
     
-    # prompt = (
-    #     f"Create a detailed travel itinerary in {user_preferences['language_preference']} focused on attractions, restaurants, and activities which encourage eco-tourism for a trip from "
-    #     f"{trip_details['source']} to {trip_details['destination']}, starting on {trip_details['date']}, lasting for "
-    #     f"{trip_details['duration']} days, within a budget of {selected_currency} {trip_details['budget']}. This should include daily timings, "
-    #     f"preferences for {user_preferences['accommodation_preference']} accommodations, a {user_preferences['travel_style']} travel style, "
-    #     f"and interests in {user_preferences['interests']}. Dietary restrictions include "
-    #     f"{user_preferences['dietary_restrictions']}, and the activity level is {user_preferences['activity_level']}. "
-    #     f"Include these verified eco-friendly hotels: {hotels_list}, and restaurants: {restaurants_list}. If you don't know what restaurant to put, suggest a local one. "
-    #     f"The route must be optimized and travel time between destinations should not exceed 1 hour and 30 minutes. "
-    #     f"Must-visit landmarks include {user_preferences['must_visit_landmarks']}. Also, provide a travel checklist relevant to the destination and duration. "
-    #     f"The optimal route based on regions is: {route}. {similar_activities_details}"
-    # )
-
+   
     prompt = (
     f"Create a detailed travel itinerary in {user_preferences['language_preference']} focused on attractions, restaurants, and activities which encourage eco-tourism for a trip from "
     f"{trip_details['source']} to {trip_details['destination']}, starting on {trip_details['date']}, lasting for "
     f"{trip_details['duration']} days. This should include daily timings, "
-    f"preferences for {user_preferences['accommodation_preference']} accommodations, a {user_preferences['travel_style']} travel style, "
-    f"and interests in {user_preferences['interests']}. Dietary restrictions include "
-    f"{user_preferences['dietary_restrictions']}, and the activity level is {user_preferences['activity_level']}. "
-    f"Include these verified eco-friendly hotels: {hotels_list}, and restaurants: {restaurants_list}. If you don't know what restaurant to put, suggest a local one. "
-    f"The route must be optimized and travel time between destinations should not exceed 1 hour and 30 minutes. "
-    f" Also, provide a travel checklist relevant to the destination and duration. "
-    f"The optimal route based on regions is: {route}. {similar_activities_details}"
+    f"preferences for {user_preferences['accommodation_preference']} accommodations, and a {user_preferences['travel_style']} travel style. "
+    f"The interests include {user_preferences['interests']}, and dietary restrictions are {user_preferences['dietary_restrictions']}. The activity level is {user_preferences['activity_level']}. "
 )
+
+    if user_preferences['travel_style'] in ['Relaxed', 'Cultural', 'Family-Friendly']:
+        prompt += (
+            "Given the travel style is more relaxed or focused on cultural and family-friendly activities, the plan will not include changing hotels frequently, except if the trip is extended beyond a typical duration. "
+        )
+    else:
+        prompt += (
+            "For a fast-paced travel style, the itinerary will include changing hotels at least once or twice, depending on the length of the trip, to optimize the experience. "
+        )
+
+    prompt += (
+        f"Include these verified eco-friendly hotels: {', '.join([hotel['Name'] for hotel in similar_hotels])}, and these restaurants: {restaurants_list}. If a specific restaurant is unknown, suggest a local one but do not invent; accurate information is crucial. "
+        f"The route must be optimized, and travel time between destinations should not exceed 1 hour and 30 minutes. "
+        f"Also, provide a travel checklist relevant to the destination and duration. "
+        f"The optimal route based on regions is: {route}. {similar_activities_details}"
+    )
+
 
     payload = {
         "model": "gpt-3.5-turbo",
@@ -245,7 +287,6 @@ trip_details = {
 }
 
 if st.sidebar.button('Generate Travel Plan'):
-    # if source and date and budget and duration:
     if source and date and duration:
         # Fetch data from MongoDB
         activities = fetch_data('activities')
@@ -253,9 +294,9 @@ if st.sidebar.button('Generate Travel Plan'):
         restaurants = fetch_data('restaurants')
         regions = fetch_data('regions')
         distance_matrix_data = fetch_data('distance_matrix')
-        distances = distance_matrix_data[0]['matrix']  # Ensure correct access to distance matrix
+        distances = distance_matrix_data[0]['matrix']
 
-        # Generate and store embeddings for activities if they don't already have them
+        # Ensure API key and MongoDB client are set up
         mongo_uri = os.getenv('MONGO_URI')
         if api_key is None:
             st.error("OpenAI API key not found. Please set the OPENAI_API_KEY in the secrets.")
@@ -265,6 +306,7 @@ if st.sidebar.button('Generate Travel Plan'):
         mongo_client = MongoClient(mongo_uri)
         activity_collection = mongo_client['eco-activities-mu']['activities']
 
+        # Update or generate embeddings for activities
         for activity in activities:
             if 'embedding' not in activity:
                 activity['embedding'] = get_embedding(activity['Tags'])
@@ -273,27 +315,21 @@ if st.sidebar.button('Generate Travel Plan'):
                     {'$set': {'embedding': activity['embedding']}}
                 )
 
-        # Example usage
+        # Find similar activities and accommodations
         similar_activities = find_similar_activities(user_preferences, activities, top_n=10)
+        similar_hotels = find_accommodations(user_preferences, hotels, top_n=3)
 
         if not similar_activities:
             st.error('No similar activities found.')
             st.stop()
 
-        # # Display similar activities
-        # for i, activity in enumerate(similar_activities, start=1):
-        #     st.write(f"Activity {i}: {activity['Name']} - {activity['Description']}")
-
-        # Calculate optimal route
-        route = calculate_optimal_route(similar_activities, distances)
+        # Calculate optimal route including both activities and hotels
+        route = calculate_optimal_route(similar_activities, similar_hotels, distances)
 
         with st.spinner('Generating Travel Plan...'):
-            # response = get_personalized_travel_plan(user_preferences, trip_details, selected_currency, similar_activities, hotels, restaurants, regions, distances, route)
-            response = get_personalized_travel_plan(user_preferences, trip_details, similar_activities, hotels, restaurants, regions, distances, route)
+            response = get_personalized_travel_plan(user_preferences, trip_details, similar_activities, similar_hotels, restaurants, regions, distances, route)
         st.success('Here is your personalized travel plan in ' + language_preference + ':')
         st.markdown(response)
         add_conclusion()
     else:
         st.error('Please fill in all the fields to generate the travel plan.')
-
-

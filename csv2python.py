@@ -25,7 +25,7 @@ def csv_to_list_of_dicts(csv_file_path):
                 continue  # Skip rows with invalid data
     return activities
 
-csv_file_path = 'database_schema - database_schema.csv'
+csv_file_path = 'database_schema - hotels.csv'
 
 # Convert CSV to list of dictionaries
 activities = csv_to_list_of_dicts(csv_file_path)
