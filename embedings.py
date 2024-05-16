@@ -7,42 +7,37 @@ from openai import OpenAI
 load_dotenv()
 
 # Set OpenAI API key
-
-# Set OpenAI API key
 api_key = OpenAI(
   api_key=os.getenv('OPENAI_API_KEY'),  # this is also the default, it can be omitted
 )
 
+# Connect to MongoDB and fetch activities
+mongo_uri = os.getenv('MONGO_URI')
 
-# # Connect to MongoDB and fetch activities
-# def fetch_activities():
-#     mongo_uri = os.getenv('MONGO_URI')
-#     client = MongoClient(mongo_uri)
-#     db = client['ecotourism']
-#     collection = db['activities']
-#     return list(collection.find())
+client = MongoClient(mongo_uri)
+db = client['eco-activities-mu']
+collection = db['activities']
 
-# # Generate embeddings using OpenAI's text-embedding-ada-002 model
-# def generate_embedding(text):
-#     response = openai.Embedding.create(input=text, model="text-embedding-ada-002")
-#     return response['data'][0]['embedding']
+# Function to generate embeddings using OpenAI's API
+def get_embedding(text, model="text-embedding-ada-002"):
+    response =  api_key.embeddings.create(input = [text], model=model).data[0].embedding
+  
+    return response
 
-# # Generate and store embeddings for activities
-# def generate_and_store_embeddings_activities():
-#     activities = fetch_activities()
-#     mongo_uri = os.getenv('MONGO_URI')
-#     client = MongoClient(mongo_uri)
-#     collection = client['ecotourism']['activities']
-
-#     for activity in activities:
-#         if 'embedding' not in activity:
-#             embedding = generate_embedding(activity['Description'])
-#             collection.update_one(
-#                 {'_id': activity['_id']},
-#                 {'$set': {'embedding': embedding}}
-#             )
-#     print("Embeddings generated and stored successfully.")
-
+# Function to update MongoDB records with embeddings
+def update_activities_with_embeddings():
+    activities = collection.find({"embedding": {"$exists": False}})
+    for activity in activities:
+        try:
+            embedding_text = f"{activity['Name']} {activity['Tags']} {activity['Description']}"
+            embedding = get_embedding(embedding_text)
+            collection.update_one(
+                {'_id': activity['_id']},
+                {'$set': {'embedding': embedding}}
+            )
+            print(f"Updated activity ID {activity['ID']} with embedding.")
+        except Exception as e:
+            print(f"Error processing activity ID {activity['ID']}: {e}")
 
 
 # Connect to MongoDB and fetch regions
@@ -115,4 +110,5 @@ def generate_and_store_embeddings():
     print("Region and distance embeddings generated and stored successfully.")
 
 if __name__ == "__main__":
-    generate_and_store_embeddings()
+    update_activities_with_embeddings()
+    # generate_and_store_embeddings()
